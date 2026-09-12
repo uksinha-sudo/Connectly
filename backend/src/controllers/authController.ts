@@ -19,7 +19,7 @@ export async function getMe(req: AuthRequest, res: Response, next:NextFunction){
 
     } catch (error) {
         res.status(500);
-        next()
+        next(error)
     }
 };
 
@@ -35,22 +35,18 @@ export async function authCallback(req: Request, res: Response, next: NextFuncti
 
         let user = await User.findOne({ clerkId })
 
-        if(!user){
-            // get user info from clerk and save to db
-
-            const clerkUser = await clerkClient.users.getUser(clerkId);
-
-            user = await User.create({
-                clerkId,
-                name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim() 
-                : clerkUser.emailAddresses[0]?.emailAddress.split("@")[0],
-                email: clerkUser.emailAddresses[0]?.emailAddress,
-                avatar: clerkUser.imageUrl
-            });
-
-
-            res.json(user)
-        }
+        if(!user){  
+            // get user info from clerk and save to db  
+            const clerkUser = await clerkClient.users.getUser(clerkId);  
+            user = await User.create({  
+                clerkId,  
+                name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()  
+                : clerkUser.emailAddresses[0]?.emailAddress.split("@")[0],  
+                email: clerkUser.emailAddresses[0]?.emailAddress,  
+                avatar: clerkUser.imageUrl  
+            });  
+        }  
+        res.json(user);  
     } catch (error) {
         res.status(500);
         next(error);
