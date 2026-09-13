@@ -27,17 +27,17 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 
-//error handlers must come after all the routes and other middlewares so they can catch errors passed with next(err) or thrown inside async handlers.
-app.use(errorHandler);
 
 
 //server front-end in production
 if(process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, "../../web/dist")))
-
+    
     app.get("/{*any}", (_, res) => {
         res.sendFile(path.join(__dirname, "../../web/dist/index.html"));
     });
 }
 
+//error handlers must come after all the routes and other middlewares so they can catch errors passed with next(err) or thrown inside async handlers.
+app.use(errorHandler);
 export default app
