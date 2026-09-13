@@ -5,9 +5,7 @@ import { Message } from '../models/Message';
 import { Chat } from '../models/Chat';
 import { User } from '../models/User'
 
-interface SocketWithUserId extends Socket {
-    userId: string;
-}
+
 //store online users in memory : userId -> socketId
 export const onlineUsers: Map<string, string> = new Map()
 
@@ -15,8 +13,8 @@ export const initializeSocket = (httpServer: httpServer) => {
     const allowedOrigins = [
         "http://localhost:8081", // expo mobile
         "http://localhost:5173", // web dev
-        process.env.FRONTEND_URL as string, //production
-    ]
+        process.env.FRONTEND_URL, //production
+    ].filter(Boolean) as string[]
 
     const io = new SocketServer(httpServer, { cors: { origin: allowedOrigins } });
 
@@ -34,7 +32,7 @@ export const initializeSocket = (httpServer: httpServer) => {
             const user = await User.findOne({ clerkId });
             if (!user) return next(new Error("User not found"));
 
-            (socket as SocketWithUserId).userId = user._id.toString()
+            socket.data.userId = user._id.toString()
 
             next()
 
@@ -48,7 +46,7 @@ export const initializeSocket = (httpServer: httpServer) => {
 
 
     io.on("connection", (socket) => {
-        const userId = (socket as SocketWithUserId).userId;
+        const userId = socket.data.userId;
 
         // send list of currently online users to the newly connected client
 
@@ -95,9 +93,11 @@ export const initializeSocket = (httpServer: httpServer) => {
                 chat.lastMessageAt = new Date();
                 await chat.save()
 
-                await message.populate("sender", "name email avatar");
+                await message.populate("sender", "name avatar");
+
                 //emit to chat room (for users inside the chat)
                 io.to(`chat: ${chatId}`).emit("new-message", message);
+                
                 //also emit to participants, personal rooms (for chat list view)
                 for (const participantId of chat.participants) {
                     io.to(`user: ${participantId}`).emit("new-message", message);
