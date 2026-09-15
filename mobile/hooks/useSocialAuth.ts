@@ -7,12 +7,18 @@ function useAuthSocial() {
     const {startSSOFlow} = useSSO();
 
     const handleSocialAuth = async(strategy:"oauth_google" | "oauth_apple" ) => {
+        if(loadingStrategy) return; //Guard against concurrent flows
         setLoadingStrategy(strategy)
 
         try {
             const { createdSessionId, setActive } = await startSSOFlow({ strategy });
             if(createdSessionId && setActive) {
-                await setActive({session:createdSessionId})
+                const provider = strategy === "oauth_google" ? "Google" : "Apple";
+                Alert.alert(
+                    "Sign-in incomplete",
+                    `${provider} sign-in did not complete. Please try again.`
+                );
+                return;
             }
         } catch (error) {
             console.log("Error in the social auth:", error);
